@@ -64,7 +64,7 @@ export default {
         // (Optional) Set to true to enable `console.debug()` logging
         debug: false,
         // (Optional) Set to "bing" to use `BingAIClient` instead of `ChatGPTClient`.
-        clientToUse: process.env.CLIENT || 'chatgpt-browser',
+        clientToUse: process.env.CLIENT || '',
     },
     // Options for the CLI app
     cliOptions: {
