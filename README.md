@@ -6,11 +6,13 @@
 <details open>
 <summary><strong>2023-03-01</strong></summary>
 
-**Support for the official ChatGPT model has been added!** You can now use the `gpt-3.5-turbo` model with the official OpenAI API, using `ChatGPTClient`. This is the same model that ChatGPT uses, and it's the most powerful model available right now. It's also the most expensive model, costing $0.0005 per request. Usage of this model is **not free**, however it is **10x cheaper** (priced at $0.002 per 1k tokens) than `text-davinci-003`.
+**Support for the official ChatGPT model has been added!** You can now use the `gpt-3.5-turbo` model with the official OpenAI API, using `ChatGPTClient`. This is the same model that ChatGPT uses, and it's the most powerful model available right now. Usage of this model is **not free**, however it is **10x cheaper** (priced at $0.002 per 1k tokens) than `text-davinci-003`.
 
 See OpenAI's post, [Introducing ChatGPT and Whisper APIs](https://openai.com/blog/introducing-chatgpt-and-whisper-apis) for more information.
 
 To use it, set `modelOptions.model` to `gpt-3.5-turbo`, and `ChatGPTClient` will handle the rest. You can still set `userLabel`, `chatGptLabel` and `promptPrefix` (system instructions) as usual.
+
+**There may be a high chance of your account being banned if you continue to automate chat.openai.com.** Continue doing so at your own risk.
 </details>
 
 <details>
@@ -117,6 +119,7 @@ Discord user @pig#8932 has found a working `text-chat-davinci-002` model, `text-
   - Retains support for models like `text-davinci-003`
 - `BingAIClient`: support for Bing's version of ChatGPT, powered by GPT-4.
 - `ChatGPTBrowserClient`: support for the official ChatGPT website, using a reverse proxy server for a Cloudflare bypass.
+  - **There may be a high chance of your account being banned if you continue to automate chat.openai.com.** Continue doing so at your own risk.
 
 ## Getting Started
 
