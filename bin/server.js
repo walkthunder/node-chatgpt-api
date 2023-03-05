@@ -113,7 +113,7 @@ server.get('/MP_verify_ucmvXzViscnLif9o.txt', async (req, reply) => {
 server.post('/api/usage', async (request, reply) => {
     const { hash } = request.body || {}
     if (hash !== 'magic-master') {
-        reply.code(400).send(error?.message || 'Auth Failed')
+        reply.code(400).send('Auth Failed')
         return;
     }
     if (!settings.openaiApiKey) {
