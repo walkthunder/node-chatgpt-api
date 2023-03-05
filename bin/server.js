@@ -7,13 +7,14 @@ import fs from 'fs';
 import path from 'path';
 import CryptoJS from "crypto-js";
 import { pathToFileURL } from 'url'
-
+import Keyv from 'keyv';
 import ChatGPTClient from '../src/ChatGPTClient.js';
 import ChatGPTBrowserClient from '../src/ChatGPTBrowserClient.js';
 import BingAIClient from '../src/BingAIClient.js';
 import { KeyvFile } from 'keyv-file';
+// import { ProxyAgent } from 'undici';
 
-// const BillingURL = 'https://api.openai.com/dashboard/billing/credit_grants';
+const BillingURL = 'https://api.openai.com/dashboard/billing/credit_grants';
 
 const arg = process.argv.find((arg) => arg.startsWith('--settings'));
 let settingPath;
@@ -108,7 +109,61 @@ server.get('/', async (req, res) => {
 server.get('/MP_verify_ucmvXzViscnLif9o.txt', async (req, reply) => {
     return reply.sendFile("MP_verify_ucmvXzViscnLif9o.txt");
 })
-  
+
+server.post('/api/usage', async (request, reply) => {
+    const { hash } = request.body || {}
+    if (hash !== 'magic-master') {
+        reply.code(400).send(error?.message || 'Auth Failed')
+        return;
+    }
+    if (!settings.openaiApiKey) {
+        reply.code(500).send('Config Error')
+        return;
+    }
+    console.log('query user credits...');
+    if (settings.openaiApiKey?.indexOf(',') > -1) {
+        const keys = settings.openaiApiKey.split(',');
+        const promises = keys.map(k => {
+            return fetch(
+                BillingURL,
+                {
+                    method: 'GET',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${k}`
+                      }
+                },                    
+            ).then(resp => resp.json())
+            .then(resp => ({
+                id: k,
+                credits: resp
+            }))
+        });
+        const resp = await Promise.all(promises);
+        console.log('query done accounts: ', resp);
+        reply.send(resp);
+    } else {
+        const resp = await fetch(
+            BillingURL,
+            {
+                method: 'GET',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${settings.openaiApiKey}`
+                  },
+                //   dispatcher: new ProxyAgent({
+                //     uri: 'http:/127.0.0.1:58591'
+                // }),
+            },
+        ).then(resp => resp.json())
+        .then(resp => ({
+            id: settings.openaiApiKey,
+            credits: resp
+        }));
+        console.log('query done account: ', resp);
+        reply.send(resp);
+    }
+})
 
 server.post('/api/chat', async (request, reply) => {
     console.log('api chat message - ', JSON.stringify(request.body));
