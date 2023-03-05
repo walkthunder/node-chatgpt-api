@@ -10,6 +10,7 @@ const CHATGPT_MODEL = 'text-chat-davinci-002-sh-alpha-aoruigiofdj83';
 export default class ChatGPTClient {
     constructor(
         apiKey,
+        cacheInstance = null,
         options = {},
         cacheOptions = {},
     ) {
@@ -89,7 +90,7 @@ export default class ChatGPTClient {
         }
 
         cacheOptions.namespace = cacheOptions.namespace || 'chatgpt';
-        this.conversationsCache = new Keyv(cacheOptions);
+        this.conversationsCache = cacheInstance || new Keyv(cacheOptions);
     }
 
     async getCompletion(input, onProgress, abortController = null) {

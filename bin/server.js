@@ -13,6 +13,8 @@ import ChatGPTBrowserClient from '../src/ChatGPTBrowserClient.js';
 import BingAIClient from '../src/BingAIClient.js';
 import { KeyvFile } from 'keyv-file';
 
+// const BillingURL = 'https://api.openai.com/dashboard/billing/credit_grants';
+
 const arg = process.argv.find((arg) => arg.startsWith('--settings'));
 let settingPath;
 if (arg) {
@@ -62,12 +64,15 @@ switch (clientToUse) {
         );
         break;
     default:
+        settings.cacheOptions.namespace = settings.cacheOptions.namespace || 'chatgpt';
+        const conversationsCache = new Keyv(settings.cacheOptions);
         if (settings.openaiApiKey?.indexOf(',') > -1) {
             const keys = settings.openaiApiKey.split(',');
             client = [];
             keys.forEach(k => {
                 client.push(new ChatGPTClient(
                     k,
+                    conversationsCache,
                     settings.chatGptClient,
                     settings.cacheOptions,
                 ));
@@ -75,6 +80,7 @@ switch (clientToUse) {
         } else {
             client = new ChatGPTClient(
                 settings.openaiApiKey,
+                conversationsCache,
                 settings.chatGptClient,
                 settings.cacheOptions,
             );
