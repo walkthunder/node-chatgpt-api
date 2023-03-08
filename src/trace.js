@@ -20,9 +20,8 @@ export const trace = async (evtName, params) => {
         }),
     })
     .then(resp => {
-        const traceResp = resp?.data?.toString();
-        traceResp && console.log('trace resp data: ', traceResp);
-        return traceResp;
+        console.log('trace resp data: ', resp);
+        return resp;
     })
     .catch(err => {
         console.error('Trace exception caught: ', evtName, err);
