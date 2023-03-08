@@ -4,14 +4,13 @@ import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import { FastifySSEPlugin } from "@waylaidwanderer/fastify-sse-v2";
 import fs from 'fs';
-import path from 'path';
-import CryptoJS from "crypto-js";
 import { pathToFileURL } from 'url'
 import Keyv from 'keyv';
 import ChatGPTClient from '../src/ChatGPTClient.js';
 import ChatGPTBrowserClient from '../src/ChatGPTBrowserClient.js';
 import BingAIClient from '../src/BingAIClient.js';
 import { KeyvFile } from 'keyv-file';
+import { trace } from '../src/trace.js'
 // import { ProxyAgent } from 'undici';
 
 const BillingURL = 'https://api.openai.com/dashboard/billing/credit_grants';
@@ -262,6 +261,10 @@ server.post('/api/chat', async (request, reply) => {
         console.debug(error);
     }
     const message = error?.data?.message || `There was an error communicating with ${clientToUse === 'bing' ? 'Bing' : 'ChatGPT'}.`;
+    trace('gpt_error', {
+        message,
+        reason: JSON.stringify(error)
+    })
     if (body.stream === true) {
         reply.sse({
             id: '',
