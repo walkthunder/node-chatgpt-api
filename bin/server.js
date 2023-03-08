@@ -262,6 +262,7 @@ server.post('/api/chat', async (request, reply) => {
     }
     const message = error?.data?.message || `There was an error communicating with ${clientToUse === 'bing' ? 'Bing' : 'ChatGPT'}.`;
     trace('gpt_error', {
+        conversationId: body.conversationId,
         message,
         reason: JSON.stringify(error)
     })

@@ -1,5 +1,5 @@
 // TODO: List all event name
-const trace = async (evtName, params) => {
+export const trace = async (evtName, params) => {
     if(process.env.DEBUG) {
         return;
     }
@@ -7,10 +7,9 @@ const trace = async (evtName, params) => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'user-agent': navigator?.userAgent
+            'user-agent': 'chat-node-server'
         },
         body: JSON.stringify({
-            'user_id': this.userId,
             'non_personalized_ads': true,
             events: [
                 {
@@ -21,7 +20,7 @@ const trace = async (evtName, params) => {
         }),
     })
     .then(resp => {
-        const traceResp = resp.data.toString();
+        const traceResp = resp?.data?.toString();
         traceResp && console.log('trace resp data: ', traceResp);
         return traceResp;
     })
