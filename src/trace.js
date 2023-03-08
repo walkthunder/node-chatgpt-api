@@ -20,7 +20,7 @@ export const trace = async (evtName, params) => {
         }),
     })
     .then(resp => {
-        console.log('trace resp data: ', resp);
+        console.log('trace done');
         return resp;
     })
     .catch(err => {

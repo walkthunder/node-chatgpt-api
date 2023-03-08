@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-undef */
 import fastify from 'fastify';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
@@ -30,9 +31,9 @@ if (fs.existsSync(settingPath)) {
     settings = (await import(pathToFileURL(fullPath).toString())).default;
 } else {
     if (arg) {
-        console.error(`Error: the file specified by the --settings parameter does not exist.`);
+        console.error('Error: the file specified by the --settings parameter does not exist.');
     } else {
-        console.error(`Error: the settings.js file does not exist.`);
+        console.error('Error: the settings.js file does not exist.');
     }
     process.exit(1);
 }
@@ -51,43 +52,9 @@ if (settings.storageFilePath && !settings.cacheOptions.store) {
 }
 
 const clientToUse = settings.apiOptions?.clientToUse || settings.clientToUse || 'chatgpt';
+const conversationsCache = new Keyv(settings.cacheOptions);
 
-let client;
-switch (clientToUse) {
-    case 'bing':
-        client = new BingAIClient(settings.bingAiClient);
-        break;
-    case 'chatgpt-browser':
-        client = new ChatGPTBrowserClient(
-            settings.chatGptBrowserClient,
-            settings.cacheOptions,
-        );
-        break;
-    default:
-        settings.cacheOptions.namespace = settings.cacheOptions.namespace || 'chatgpt';
-        const conversationsCache = new Keyv(settings.cacheOptions);
-        if (settings.openaiApiKey?.indexOf(',') > -1) {
-            const keys = settings.openaiApiKey.split(',');
-            client = [];
-            keys.forEach(k => {
-                client.push(new ChatGPTClient(
-                    k,
-                    conversationsCache,
-                    settings.chatGptClient,
-                    settings.cacheOptions,
-                ));
-            });
-        } else {
-            client = new ChatGPTClient(
-                settings.openaiApiKey,
-                conversationsCache,
-                settings.chatGptClient,
-                settings.cacheOptions,
-            );
-        }
-
-        break;
-}
+const perMessageClientOptionsWhitelist = settings.apiOptions?.perMessageClientOptionsWhitelist || null;
 
 const server = fastify();
 
@@ -95,49 +62,49 @@ await server.register(FastifySSEPlugin);
 
 await server.register(fastifyStatic, {
     root: fs.realpathSync('.'),
-    prefix: '/'
-})
+    prefix: '/',
+});
+
 await server.register(cors, {
     origin: '*',
 });
 
 server.get('/', async (req, res) => {
     res.code(200);
-    res.send('ok')
-})
-server.get('/MP_verify_ucmvXzViscnLif9o.txt', async (req, reply) => {
-    return reply.sendFile("MP_verify_ucmvXzViscnLif9o.txt");
-})
+    res.send('ok');
+});
+
+server.get('/MP_verify_ucmvXzViscnLif9o.txt', async (req, reply) => reply.sendFile('MP_verify_ucmvXzViscnLif9o.txt'));
 
 server.post('/api/usage', async (request, reply) => {
-    const { hash } = request.body || {}
+    const { hash } = request.body || {};
     if (hash !== 'magic-master') {
-        reply.code(400).send('Auth Failed')
+        reply.code(400).send('Auth Failed');
         return;
     }
     if (!settings.openaiApiKey) {
-        reply.code(500).send('Config Error')
+        reply.code(500).send('Config Error');
         return;
     }
     console.log('query user credits...');
     if (settings.openaiApiKey?.indexOf(',') > -1) {
         const keys = settings.openaiApiKey.split(',');
-        const promises = keys.map(k => {
-            return fetch(
-                BillingURL,
-                {
-                    method: 'GET',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${k}`
-                      }
-                },                    
-            ).then(resp => resp.json())
+        const promises = keys.map(k => fetch(
+            BillingURL,
+            {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${k}`,
+                },
+            },
+        )
+            .then(resp => resp.json())
             .then(resp => ({
                 id: k,
-                credits: resp
-            }))
-        });
+                credits: resp,
+            }
+            )));
         const resp = await Promise.all(promises);
         console.log('query done accounts: ', resp);
         reply.send(resp);
@@ -146,47 +113,49 @@ server.post('/api/usage', async (request, reply) => {
             BillingURL,
             {
                 method: 'GET',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${settings.openaiApiKey}`
-                  },
+                    Authorization: `Bearer ${settings.openaiApiKey}`,
+                },
                 //   dispatcher: new ProxyAgent({
                 //     uri: 'http:/127.0.0.1:58591'
                 // }),
             },
-        ).then(resp => resp.json())
-        .then(resp => ({
-            id: settings.openaiApiKey,
-            credits: resp
-        }));
+        ).then(respTmp => respTmp.json())
+            .then(respTmp => ({
+                id: settings.openaiApiKey,
+                credits: respTmp,
+            }));
         console.log('query done account: ', resp);
         reply.send(resp);
     }
-})
+});
 
 server.post('/api/chat', async (request, reply) => {
     console.log('api chat message - ', JSON.stringify(request.body));
-    try {
-        const { hash } = request.body || {}
-        if (!hash) {
-            throw new Error('Not Authorized')
-        }
-        console.log('hash and salt: ', hash);
-        const bytes  = CryptoJS.AES.decrypt(hash, process.env.CHAT_SALT);
-        console.log('request decrypt: ', bytes);
-        const { id, openId, left, date } = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-        console.log('request hash data: ', id, openId, left, date);
-        if (!id || !openId || (left <= 0)) {
-            throw new Error('Invalid Hash Data')
-        }
-        if (Math.abs(new Date().valueOf() - Number(date)) > 20000) {
-            throw new Error('Outdated Request')
-        }
-        // Continue biz
-    } catch (error) {
-        reply.code(400).send(error?.message || 'Auth Failed')
-        return;
-    }
+    // try {
+    //     const { hash } = request.body || {};
+    //     if (!hash) {
+    //         throw new Error('Not Authorized');
+    //     }
+    //     console.log('hash and salt: ', hash);
+    //     const bytes = CryptoJS.AES.decrypt(hash, process.env.CHAT_SALT);
+    //     console.log('request decrypt: ', bytes);
+    //     const {
+    //         id, openId, left, date,
+    //     } = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    //     console.log('request hash data: ', id, openId, left, date);
+    //     if (!id || !openId || (left <= 0)) {
+    //         throw new Error('Invalid Hash Data');
+    //     }
+    //     if (Math.abs(new Date().valueOf() - Number(date)) > 20000) {
+    //         throw new Error('Outdated Request');
+    //     }
+    //     // Continue biz
+    // } catch (error) {
+    //     reply.code(400).send(error?.message || 'Auth Failed');
+    //     return;
+    // }
 
     const body = request.body || {};
     const abortController = new AbortController();
@@ -223,17 +192,27 @@ server.post('/api/chat', async (request, reply) => {
             // noinspection ExceptionCaughtLocallyJS
             throw invalidError;
         }
-        const parentMessageId = body.parentMessageId ? body.parentMessageId.toString() : undefined;
-        let targetClient = client;
-        if (Array.isArray(client)) {
-            targetClient = client[Math.floor(Math.random() * client.length)]
+
+        let clientToUseForMessage = clientToUse;
+        const clientOptions = filterClientOptions(body.clientOptions, clientToUseForMessage);
+        if (clientOptions && clientOptions.clientToUse) {
+            clientToUseForMessage = clientOptions.clientToUse;
+            delete clientOptions.clientToUse;
+        }
+
+        const messageClient = getClient(clientToUseForMessage);
+        let targetClient = messageClient;
+        if (Array.isArray(messageClient)) {
+            targetClient = messageClient[Math.floor(Math.random() * messageClient.length)];
         }
         result = await targetClient.sendMessage(body.message, {
+            jailbreakConversationId: body.jailbreakConversationId ? body.jailbreakConversationId.toString() : undefined,
             conversationId: body.conversationId ? body.conversationId.toString() : undefined,
-            parentMessageId,
+            parentMessageId: body.parentMessageId ? body.parentMessageId.toString() : undefined,
             conversationSignature: body.conversationSignature,
             clientId: body.clientId,
             invocationId: body.invocationId,
+            clientOptions,
             onProgress,
             abortController,
         });
@@ -249,9 +228,11 @@ server.post('/api/chat', async (request, reply) => {
             reply.sse({ event: 'result', id: '', data: JSON.stringify(result) });
             reply.sse({ id: '', data: '[DONE]' });
             await nextTick();
-            return reply.raw.end();
+            reply.raw.end();
+            return;
         }
-        return reply.send(result);
+        reply.send(result);
+        return;
     }
 
     const code = error?.data?.code || 503;
@@ -264,8 +245,8 @@ server.post('/api/chat', async (request, reply) => {
     trace('gpt_error', {
         conversationId: body.conversationId,
         message,
-        reason: JSON.stringify(error)
-    })
+        reason: JSON.stringify(error),
+    });
     if (body.stream === true) {
         reply.sse({
             id: '',
@@ -276,18 +257,19 @@ server.post('/api/chat', async (request, reply) => {
             }),
         });
         await nextTick();
-        return reply.raw.end();
+        reply.raw.end();
+        return;
     }
-    return reply.code(code).send({ error: message });
+    reply.code(code).send({ error: message });
 });
 
-const port = settings.apiOptions?.port || settings.port || 3000
+const port = settings.apiOptions?.port || settings.port || 3000;
 
 server.listen({
     port,
-    host: settings.apiOptions?.host || 'localhost'
+    host: settings.apiOptions?.host || 'localhost',
 }, (error) => {
-    console.log('server started: ', port)
+    console.log('server started: ', port);
     if (error) {
         console.error(error);
         process.exit(1);
@@ -298,3 +280,88 @@ function nextTick() {
     return new Promise(resolve => setTimeout(resolve, 0));
 }
 
+function getClient(clientToUseForMessage) {
+    switch (clientToUseForMessage) {
+        case 'bing':
+            return new BingAIClient(settings.bingAiClient);
+        case 'chatgpt-browser':
+            return new ChatGPTBrowserClient(
+                settings.chatGptBrowserClient,
+                settings.cacheOptions,
+            );
+        case 'chatgpt':
+            settings.cacheOptions.namespace = settings.cacheOptions.namespace || 'chatgpt';
+            // eslint-disable-next-line no-case-declarations
+            let configApiKey = settings.openaiApiKey || settings.chatGptClient.openaiApiKey;
+            if (!configApiKey) {
+                throw new Error('Api Key not config');
+            }
+            if (configApiKey?.indexOf(',') > -1) {
+                const keys = configApiKey.split(',');
+                configApiKey = keys[Math.floor(Math.random() * keys.length)];
+            }
+            return new ChatGPTClient(
+                configApiKey,
+                conversationsCache,
+                settings.chatGptClient,
+                settings.cacheOptions,
+            );
+        default:
+            throw new Error(`Invalid clientToUse: ${clientToUseForMessage}`);
+    }
+}
+
+/**
+ * Filter objects to only include whitelisted properties set in
+ * `settings.js` > `apiOptions.perMessageClientOptionsWhitelist`.
+ * Returns original object if no whitelist is set.
+ * @param {*} inputOptions
+ * @param clientToUseForMessage
+ */
+function filterClientOptions(inputOptions, clientToUseForMessage) {
+    if (!inputOptions || !perMessageClientOptionsWhitelist) {
+        return null;
+    }
+
+    // If inputOptions.clientToUse is set and is in the whitelist, use it instead of the default
+    if (
+        perMessageClientOptionsWhitelist.validClientsToUse
+        && inputOptions.clientToUse
+        && perMessageClientOptionsWhitelist.validClientsToUse.includes(inputOptions.clientToUse)
+    ) {
+        clientToUseForMessage = inputOptions.clientToUse;
+    } else {
+        inputOptions.clientToUse = clientToUseForMessage;
+    }
+
+    const whitelist = perMessageClientOptionsWhitelist[clientToUseForMessage];
+    if (!whitelist) {
+        // No whitelist, return all options
+        return inputOptions;
+    }
+
+    const outputOptions = {};
+
+    for (const property of Object.keys(inputOptions)) {
+        const allowed = whitelist.includes(property);
+
+        if (!allowed && typeof inputOptions[property] === 'object') {
+            // Check for nested properties
+            for (const nestedProp of Object.keys(inputOptions[property])) {
+                const nestedAllowed = whitelist.includes(`${property}.${nestedProp}`);
+                if (nestedAllowed) {
+                    outputOptions[property] = outputOptions[property] || {};
+                    outputOptions[property][nestedProp] = inputOptions[property][nestedProp];
+                }
+            }
+            continue;
+        }
+
+        // Copy allowed properties to outputOptions
+        if (allowed) {
+            outputOptions[property] = inputOptions[property];
+        }
+    }
+
+    return outputOptions;
+}
