@@ -300,6 +300,7 @@ function getClient(clientToUseForMessage) {
                 const keys = configApiKey.split(',');
                 configApiKey = keys[Math.floor(Math.random() * keys.length)];
             }
+            console.log('api key - ', configApiKey);
             return new ChatGPTClient(
                 configApiKey,
                 conversationsCache,
