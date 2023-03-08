@@ -34,9 +34,9 @@ export default class ChatGPTClient {
             this.options = options;
         }
 
-        if (this.options.openaiApiKey) {
-            this.apiKey = this.options.openaiApiKey;
-        }
+        // if (this.options.openaiApiKey) {
+        //     this.apiKey = this.options.openaiApiKey;
+        // }
 
         const modelOptions = this.options.modelOptions || {};
         this.modelOptions = {
