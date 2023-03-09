@@ -12,18 +12,18 @@ export const trace = async (evtName, params) => {
             'user-agent': 'chat-node-server',
         },
         body: JSON.stringify({
+            client_id: 'chat.node.server', // TODO: Read from server env
             non_personalized_ads: true,
             events: [
                 {
                     name: evtName,
-                    ...(params || {}),
+                    params,
                 },
             ],
         }),
     })
-        .then(resp => resp.json())
         .then((resp) => {
-            console.log('trace done', resp);
+            console.log('trace done', resp.status);
             return resp;
         })
         .catch((err) => {
