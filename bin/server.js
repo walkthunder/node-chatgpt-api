@@ -82,13 +82,14 @@ server.post('/api/usage', async (request, reply) => {
         reply.code(400).send('Auth Failed');
         return;
     }
-    if (!settings.openaiApiKey) {
+    const configApiKey = settings.openaiApiKey || settings.chatGptClient.openaiApiKey;
+    if (!configApiKey) {
         reply.code(500).send('Config Error');
         return;
     }
     console.log('query user credits...');
-    if (settings.openaiApiKey?.indexOf(',') > -1) {
-        const keys = settings.openaiApiKey.split(',');
+    if (configApiKey?.indexOf(',') > -1) {
+        const keys = configApiKey.split(',');
         const promises = keys.map(k => fetch(
             BillingURL,
             {
@@ -115,7 +116,7 @@ server.post('/api/usage', async (request, reply) => {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${settings.openaiApiKey}`,
+                    Authorization: `Bearer ${configApiKey}`,
                 },
                 //   dispatcher: new ProxyAgent({
                 //     uri: 'http:/127.0.0.1:58591'
@@ -123,7 +124,7 @@ server.post('/api/usage', async (request, reply) => {
             },
         ).then(respTmp => respTmp.json())
             .then(respTmp => ({
-                id: settings.openaiApiKey,
+                id: configApiKey,
                 credits: respTmp,
             }));
         console.log('query done account: ', resp);
