@@ -23,7 +23,7 @@ export const trace = async (evtName, params) => {
         }),
     })
         .then((resp) => {
-            console.log('trace done', resp.status);
+            console.log(`trace ${evtName} done with ${resp?.status}`);
             return resp;
         })
         .catch((err) => {
