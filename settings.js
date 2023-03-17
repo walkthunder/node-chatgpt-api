@@ -6,6 +6,7 @@ export default {
     // If set, `ChatGPTClient` will use `keyv-file` to store conversations to this JSON file instead of in memory.
     // However, `cacheOptions.store` will override this if set
     storageFilePath: process.env.STORAGE_FILE_PATH || './cache.json',
+    chatSalt: process.env.CHAT_SALT || '',
     chatGptClient: {
         // Your OpenAI API key (for `ChatGPTClient`)
         openaiApiKey: process.env.OPENAI_API_KEY || '',

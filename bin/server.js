@@ -141,7 +141,7 @@ server.post('/api/chat', async (request, reply) => {
             throw new Error('Not Authorized');
         }
         console.log('hash and salt: ', hash);
-        const bytes = CryptoJS.AES.decrypt(hash, process.env.CHAT_SALT);
+        const bytes = CryptoJS.AES.decrypt(hash, settings.chatSalt);
         console.log('request decrypt: ', bytes);
         const {
             id, openId, left, date,
