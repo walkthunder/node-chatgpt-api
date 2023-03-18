@@ -95,4 +95,5 @@ export default {
         // (Optional) Set to "bing" to use `BingAIClient` instead of `ChatGPTClient`.
         // clientToUse: 'bing',
     },
+    skipAuth: process.env.SKIP_AUTH ? process.env.SKIP_AUTH === 'yes' : false,
 };
