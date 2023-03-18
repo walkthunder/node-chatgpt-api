@@ -14,6 +14,9 @@ import ChatGPTBrowserClient from '../src/ChatGPTBrowserClient.js';
 import BingAIClient from '../src/BingAIClient.js';
 import { trace } from '../src/trace.js';
 // import { ProxyAgent } from 'undici';
+import { exec } from 'child_process'
+import { promisify } from 'util'
+const execp = promisify(exec);
 
 const BillingURL = 'https://api.openai.com/dashboard/billing/credit_grants';
 
@@ -74,6 +77,12 @@ server.get('/', async (req, res) => {
     res.code(200);
     res.send('ok');
 });
+
+server.get('/api/getip', async (req, res) => {
+    const data = await execp("wget -qO - ipinfo.io");
+    res.code(200);
+    res.send(data.stdout);
+})
 
 server.get('/MP_verify_ucmvXzViscnLif9o.txt', async (req, reply) => reply.sendFile('MP_verify_ucmvXzViscnLif9o.txt'));
 
