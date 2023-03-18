@@ -144,30 +144,31 @@ server.post('/api/usage', async (request, reply) => {
 
 server.post('/api/chat', async (request, reply) => {
     console.log('api chat message - ', JSON.stringify(request.body));
-    try {
-        const { hash } = request.body || {};
-        if (!hash) {
-            throw new Error('Not Authorized');
-        }
-        console.log('hash and salt: ', hash);
-        const bytes = CryptoJS.AES.decrypt(hash, settings.chatSalt);
-        console.log('request decrypt: ', bytes);
-        const {
-            id, openId, left, date,
-        } = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-        console.log('request hash data: ', id, openId, left, date);
-        if (!id || !openId || (left <= 0)) {
-            throw new Error('Invalid Hash Data');
-        }
-        if (Math.abs(new Date().valueOf() - Number(date)) > 20000) {
-            throw new Error('Outdated Request');
-        }
-        // Continue biz
-    } catch (error) {
-        console.error('auth failed: ', error);
-        reply.code(400).send(error?.message || 'Auth Failed');
-        return;
-    }
+    // 去掉鉴权
+    // try {
+    //     const { hash } = request.body || {};
+    //     if (!hash) {
+    //         throw new Error('Not Authorized');
+    //     }
+    //     console.log('hash and salt: ', hash);
+    //     const bytes = CryptoJS.AES.decrypt(hash, settings.chatSalt);
+    //     console.log('request decrypt: ', bytes);
+    //     const {
+    //         id, openId, left, date,
+    //     } = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    //     console.log('request hash data: ', id, openId, left, date);
+    //     if (!id || !openId || (left <= 0)) {
+    //         throw new Error('Invalid Hash Data');
+    //     }
+    //     if (Math.abs(new Date().valueOf() - Number(date)) > 20000) {
+    //         throw new Error('Outdated Request');
+    //     }
+    //     // Continue biz
+    // } catch (error) {
+    //     console.error('auth failed: ', error);
+    //     reply.code(400).send(error?.message || 'Auth Failed');
+    //     return;
+    // }
 
     const body = request.body || {};
     const abortController = new AbortController();
