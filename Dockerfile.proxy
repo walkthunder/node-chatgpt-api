@@ -1,0 +1,10 @@
+FROM shanehsi/v2ray-proxychains-node:latest
+
+WORKDIR /app
+COPY package*.json /app/
+
+ENV NODE_ENV production
+RUN npm ci --only=production
+COPY . /app
+EXPOSE 8082
+CMD ["proxychains", "node", "bin/server.js"]

@@ -79,10 +79,10 @@ server.get('/', async (req, res) => {
 });
 
 server.get('/api/getip', async (req, res) => {
-    const data = await execp("wget -qO - ipinfo.io");
+    const data = await execp('wget -qO - ipinfo.io');
     res.code(200);
     res.send(data.stdout);
-})
+});
 
 server.get('/MP_verify_ucmvXzViscnLif9o.txt', async (req, reply) => reply.sendFile('MP_verify_ucmvXzViscnLif9o.txt'));
 
