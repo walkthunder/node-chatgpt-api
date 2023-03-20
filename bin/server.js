@@ -97,7 +97,7 @@ server.post('/api/proxy/reset', async (request, reply) => {
     if (typeof proxys === 'string') {
         console.log('reset proxy list: ', proxys);
         const list = initProxy(proxys);
-        reply(JSON.stringify(list));
+        reply.send(JSON.stringify(list));
     } else {
         reply.code(400).send('invalid input');
     }
