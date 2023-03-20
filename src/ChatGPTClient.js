@@ -2,8 +2,9 @@ import './fetch-polyfill.js';
 import crypto from 'crypto';
 import Keyv from 'keyv';
 import { encoding_for_model as encodingForModel, get_encoding as getEncoding } from '@dqbd/tiktoken';
-import { fetchEventSource } from '@waylaidwanderer/fetch-event-source';
+// import { fetchEventSource } from '@waylaidwanderer/fetch-event-source';
 import { Agent, ProxyAgent } from 'undici';
+import { fetchEvt } from './retry-fetch-event.js';
 
 const CHATGPT_MODEL = 'gpt-3.5-turbo';
 
@@ -174,7 +175,7 @@ export default class ChatGPTClient {
             return new Promise(async (resolve, reject) => {
                 try {
                     let done = false;
-                    await fetchEventSource(url, {
+                    await fetchEvt(url, {
                         ...opts,
                         signal: abortController.signal,
                         async onopen(response) {
@@ -196,9 +197,6 @@ export default class ChatGPTClient {
                             throw error;
                         },
                         onclose() {
-                            if (debug) {
-                                console.debug('Server closed the connection unexpectedly, returning...');
-                            }
                             // workaround for private API not sending [DONE] event
                             if (!done) {
                                 onProgress('[DONE]');
@@ -231,6 +229,7 @@ export default class ChatGPTClient {
                         },
                     });
                 } catch (err) {
+                    console.error('external err: ', err);
                     reject(err);
                 }
             });
@@ -304,7 +303,7 @@ export default class ChatGPTClient {
                     if (!progressMessage.choices) {
                         return;
                     }
-                    const token = this.isChatGptModel ?  progressMessage.choices[0].delta.content : progressMessage.choices[0].text;
+                    const token = this.isChatGptModel ? progressMessage.choices[0].delta.content : progressMessage.choices[0].text;
                     // first event's delta content is always undefined
                     if (!token) {
                         return;

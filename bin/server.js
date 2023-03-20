@@ -13,6 +13,7 @@ import ChatGPTClient from '../src/ChatGPTClient.js';
 import ChatGPTBrowserClient from '../src/ChatGPTBrowserClient.js';
 import BingAIClient from '../src/BingAIClient.js';
 import { trace } from '../src/trace.js';
+import { initProxy } from '../src/ProxyManager.js';
 // import { ProxyAgent } from 'undici';
 
 const BillingURL = 'https://api.openai.com/dashboard/billing/credit_grants';
@@ -51,6 +52,7 @@ if (settings.storageFilePath && !settings.cacheOptions.store) {
 
     settings.cacheOptions.store = new KeyvFile({ filename: settings.storageFilePath });
 }
+initProxy();
 
 const clientToUse = settings.apiOptions?.clientToUse || settings.clientToUse || 'chatgpt';
 const conversationsCache = new Keyv(settings.cacheOptions);
@@ -76,6 +78,18 @@ server.get('/', async (req, res) => {
 });
 
 server.get('/MP_verify_ucmvXzViscnLif9o.txt', async (req, reply) => reply.sendFile('MP_verify_ucmvXzViscnLif9o.txt'));
+
+server.post('/api/proxy/reset', async (request, reply) => {
+    const { hash, proxys } = request.body || {};
+    if (hash !== 'magic-master') {
+        reply.code(400).send('Auth Failed');
+        return;
+    }
+    if (typeof proxys === 'string') {
+        console.log('reset proxy list: ', proxys);
+        initProxy(proxys);
+    }
+});
 
 server.post('/api/usage', async (request, reply) => {
     const { hash } = request.body || {};
