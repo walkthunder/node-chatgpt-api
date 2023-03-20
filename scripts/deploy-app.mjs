@@ -88,7 +88,7 @@ Docker 镜像：${tagged}
 }
 
 try {
-    // await checkGitStatus()
+    await checkGitStatus()
     await bundleApp()
     await $`docker login ccr.ccs.tencentyun.com --username=100028622516`
     await within(async () => {
