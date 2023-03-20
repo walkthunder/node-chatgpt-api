@@ -6,7 +6,7 @@ export const initProxy = (str) => {
     const envs = str || process.env.PROXY_LIST || '';
     if (!envs) {
         console.log('no proxy list configed from env');
-        return;
+        return null;
     }
     const list = envs.split(',').map((url) => {
         if (url) {
@@ -18,7 +18,13 @@ export const initProxy = (str) => {
         return null;
     }).filter(item => !!item);
 
-    proxyList.push(...list);
+    proxyList.splice(0, proxyList?.length, list);
+    return proxyList;
+};
+
+export const listProxy = () => {
+    console.log('list proxy in use: ', proxyList);
+    return proxyList;
 };
 
 export const getAProxy = () => {

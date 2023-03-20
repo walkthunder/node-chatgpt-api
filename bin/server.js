@@ -13,7 +13,7 @@ import ChatGPTClient from '../src/ChatGPTClient.js';
 import ChatGPTBrowserClient from '../src/ChatGPTBrowserClient.js';
 import BingAIClient from '../src/BingAIClient.js';
 import { trace } from '../src/trace.js';
-import { initProxy } from '../src/ProxyManager.js';
+import { initProxy, listProxy } from '../src/ProxyManager.js';
 // import { ProxyAgent } from 'undici';
 import { exec } from 'child_process'
 import { promisify } from 'util'
@@ -96,8 +96,16 @@ server.post('/api/proxy/reset', async (request, reply) => {
     }
     if (typeof proxys === 'string') {
         console.log('reset proxy list: ', proxys);
-        initProxy(proxys);
+        const list = initProxy(proxys);
+        reply(JSON.stringify(list));
+    } else {
+        reply.code(400).send('invalid input');
     }
+});
+
+server.get('/api/proxy/list', async (request, reply) => {
+    const list = listProxy();
+    reply.code(200).send(JSON.stringify(list));
 });
 
 server.post('/api/usage', async (request, reply) => {
