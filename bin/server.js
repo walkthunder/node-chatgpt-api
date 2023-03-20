@@ -15,6 +15,9 @@ import BingAIClient from '../src/BingAIClient.js';
 import { trace } from '../src/trace.js';
 import { initProxy } from '../src/ProxyManager.js';
 // import { ProxyAgent } from 'undici';
+import { exec } from 'child_process'
+import { promisify } from 'util'
+const execp = promisify(exec);
 
 const BillingURL = 'https://api.openai.com/dashboard/billing/credit_grants';
 
@@ -75,6 +78,12 @@ await server.register(cors, {
 server.get('/', async (req, res) => {
     res.code(200);
     res.send('ok');
+});
+
+server.get('/api/getip', async (req, res) => {
+    const data = await execp('wget -qO - ipinfo.io');
+    res.code(200);
+    res.send(data.stdout);
 });
 
 server.get('/MP_verify_ucmvXzViscnLif9o.txt', async (req, reply) => reply.sendFile('MP_verify_ucmvXzViscnLif9o.txt'));
@@ -149,29 +158,31 @@ server.post('/api/usage', async (request, reply) => {
 
 server.post('/api/chat', async (request, reply) => {
     console.log('api chat message - ', JSON.stringify(request.body));
-    try {
-        const { hash } = request.body || {};
-        if (!hash) {
-            throw new Error('Not Authorized');
+    if (!settings.skipAuth) {
+        try {
+            const { hash } = request.body || {};
+            if (!hash) {
+                throw new Error('Not Authorized');
+            }
+            console.log('hash and salt: ', hash);
+            const bytes = CryptoJS.AES.decrypt(hash, settings.chatSalt);
+            console.log('request decrypt: ', bytes);
+            const {
+                id, openId, left, date,
+            } = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+            console.log('request hash data: ', id, openId, left, date);
+            if (!id || !openId || (left <= 0)) {
+                throw new Error('Invalid Hash Data');
+            }
+            if (Math.abs(new Date().valueOf() - Number(date)) > 20000) {
+                throw new Error('Outdated Request');
+            }
+            // Continue biz
+        } catch (error) {
+            console.error('auth failed: ', error);
+            reply.code(400).send(error?.message || 'Auth Failed');
+            return;
         }
-        console.log('hash and salt: ', hash);
-        const bytes = CryptoJS.AES.decrypt(hash, settings.chatSalt);
-        console.log('request decrypt: ', bytes);
-        const {
-            id, openId, left, date,
-        } = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-        console.log('request hash data: ', id, openId, left, date);
-        if (!id || !openId || (left <= 0)) {
-            throw new Error('Invalid Hash Data');
-        }
-        if (Math.abs(new Date().valueOf() - Number(date)) > 20000) {
-            throw new Error('Outdated Request');
-        }
-        // Continue biz
-    } catch (error) {
-        console.error('auth failed: ', error);
-        reply.code(400).send(error?.message || 'Auth Failed');
-        return;
     }
 
     const body = request.body || {};
