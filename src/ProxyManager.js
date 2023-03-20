@@ -27,7 +27,7 @@ export const getAProxy = () => {
         // TODO: Alert that no available proxy
         console.error('no valid proxy left');
         trace('proxy_exausted', {});
-        return;
+        return null;
     }
     // 暂时的策略是优先选择score最高的proxy
     const proxy = validList[0];

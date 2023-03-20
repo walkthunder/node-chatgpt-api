@@ -16,7 +16,7 @@ export const fetchEvt = async (url, opts) => {
         return await fetchEventSource(url, {
             ...opts,
             async onopen(response) {
-                console.log('on open: ', response.status, response);
+                console.log('on open: ', response.status);
                 if ((response.status > 400) && (response.status < 500)) {
                     if (retryCnt < 4) {
                         retryCnt += 1;
