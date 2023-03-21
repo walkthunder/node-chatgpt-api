@@ -40,6 +40,38 @@ const register = () => {
         });
 };
 
+const crash = () => {
+    if (process.env.DEBUG) {
+        return;
+    }
+    if (!serviceId) {
+        return;
+    }
+    // eslint-disable-next-line consistent-return
+    return fetch('https://prod-sdk-api.my.webinfra.cloud/api/worker/remove', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'user-agent': 'chat-node-server',
+        },
+        body: JSON.stringify({
+            auth: 'auth-hash-str',
+            id: serviceId, // 当前实例的服务地址
+        }),
+    })
+        .then(resp => resp.json())
+        .then((resp) => {
+            console.log(`unregister srv done with ${resp?.data}`);
+            if (resp.success) {
+                serviceId = '';
+            }
+            return serviceId;
+        })
+        .catch((err) => {
+            console.error('unregister exception caught: ', err);
+        });
+};
+
 const registered = () => {
     console.log('service registered: ', serviceId);
     return serviceId;
@@ -54,6 +86,9 @@ const up = () => {
 
 const down = () => {
     serviceScore = Math.max(MIN_SCORE, serviceScore - 1);
+    if (serviceScore === MIN_SCORE) {
+        crash();
+    }
 };
 
 const get = () => {
