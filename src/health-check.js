@@ -1,5 +1,6 @@
 const MAX_SCORE = 10;
 const MIN_SCORE = 0;
+const MANAGER_HOST = 'https://api.my.webinfra.cloud';
 
 let serviceId = '';
 let serviceScore = 10;
@@ -14,7 +15,7 @@ const register = () => {
         return;
     }
     // eslint-disable-next-line consistent-return
-    return fetch('https://prod-sdk-api.my.webinfra.cloud/api/worker/register', {
+    return fetch(`${MANAGER_HOST}/api/worker/register`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -48,7 +49,7 @@ const crash = () => {
         return;
     }
     // eslint-disable-next-line consistent-return
-    return fetch('https://prod-sdk-api.my.webinfra.cloud/api/worker/remove', {
+    return fetch(`${MANAGER_HOST}/api/worker/remove`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
