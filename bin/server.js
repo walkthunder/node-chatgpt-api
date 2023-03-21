@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable prefer-destructuring */
 /* eslint-disable no-undef */
 import fastify from 'fastify';
 import cors from '@fastify/cors';
@@ -9,19 +10,20 @@ import { pathToFileURL } from 'url';
 import CryptoJS from 'crypto-js';
 import Keyv from 'keyv';
 import { KeyvFile } from 'keyv-file';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import ChatGPTClient from '../src/ChatGPTClient.js';
 import ChatGPTBrowserClient from '../src/ChatGPTBrowserClient.js';
 import BingAIClient from '../src/BingAIClient.js';
 import { trace } from '../src/trace.js';
 import { initProxy, listProxy } from '../src/ProxyManager.js';
 // import { ProxyAgent } from 'undici';
-import { exec } from 'child_process'
-import { promisify } from 'util'
+
 const execp = promisify(exec);
 
 const BillingURL = 'https://api.openai.com/dashboard/billing/credit_grants';
 
-const arg = process.argv.find((arg) => arg.startsWith('--settings'));
+const arg = process.argv.find(args => args.startsWith('--settings'));
 let settingPath;
 if (arg) {
     settingPath = arg.split('=')[1];
@@ -162,6 +164,11 @@ server.post('/api/usage', async (request, reply) => {
         console.log('query done account: ', resp);
         reply.send(resp);
     }
+});
+
+server.get('/api/ping', async (request, reply) => {
+    console.log('ping request');
+    reply.send('pong');
 });
 
 server.post('/api/chat', async (request, reply) => {
