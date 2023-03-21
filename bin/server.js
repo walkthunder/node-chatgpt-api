@@ -169,7 +169,7 @@ server.post('/api/usage', async (request, reply) => {
     }
 });
 
-server.get('/api/ping', async (request, reply) => {
+server.post('/api/ping', async (request, reply) => {
     console.log('ping request');
     const info = healthCheck.get();
     reply.send({
