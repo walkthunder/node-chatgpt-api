@@ -1,3 +1,5 @@
+import { trace } from './trace.js';
+
 const MAX_SCORE = 10;
 const MIN_SCORE = 0;
 const MANAGER_HOST = 'https://api.my.webinfra.cloud';
@@ -31,9 +33,17 @@ const register = () => {
             console.log(`register srv done with ${resp?.data}`);
             const instanceId = resp?.id;
             if (!instanceId) {
+                trace('worker_register_fail', {
+                    message: JSON.stringify(resp),
+                    url: process.env.SRV_URL,
+                });
                 throw new Error('register failed for no id generated');
             }
             serviceId = instanceId;
+            trace('worker_register_done', {
+                url: process.env.SRV_URL,
+                id: serviceId,
+            });
             return serviceId;
         })
         .catch((err) => {
@@ -64,12 +74,25 @@ const crash = () => {
         .then((resp) => {
             console.log(`unregister srv done with ${resp?.data}`);
             if (resp.success) {
+                trace('worker_register_done', {
+                    url: process.env.SRV_URL,
+                    id: serviceId,
+                });
                 serviceId = '';
+                trace('worker_crash_done', {
+                    id: serviceId,
+                    url: process.env.SRV_URL,
+                });
             }
-            return serviceId;
+            throw new Error('Report crash failed');
         })
         .catch((err) => {
             console.error('unregister exception caught: ', err);
+            trace('worker_crash_fail', {
+                id: serviceId,
+                url: process.env.SRV_URL,
+                message: JSON.stringify(err),
+            });
         });
 };
 
