@@ -30,21 +30,24 @@ const register = () => {
     })
         .then(resp => resp.json())
         .then((resp) => {
-            console.log(`register srv done with ${resp?.data}`);
-            const instanceId = resp?.id;
-            if (!instanceId) {
-                trace('worker_register_fail', {
-                    message: JSON.stringify(resp),
+            console.log('register srv done with', resp);
+            if (resp.success) {
+                const instanceId = resp.data?.id;
+                if (!instanceId) {
+                    trace('worker_register_fail', {
+                        message: JSON.stringify(resp),
+                        url: process.env.SRV_URL,
+                    });
+                    throw new Error('register failed for no id generated');
+                }
+                serviceId = instanceId;
+                trace('worker_register_done', {
                     url: process.env.SRV_URL,
+                    id: serviceId,
                 });
-                throw new Error('register failed for no id generated');
+                return serviceId;
             }
-            serviceId = instanceId;
-            trace('worker_register_done', {
-                url: process.env.SRV_URL,
-                id: serviceId,
-            });
-            return serviceId;
+            throw new Error('Register failed');
         })
         .catch((err) => {
             console.error('register exception caught: ', err);
@@ -116,7 +119,7 @@ const down = () => {
 };
 
 const get = () => {
-    console.log('get score: ', serviceScore);
+    console.log('get score: ', serviceScore, serviceId);
     return {
         serviceScore,
         serviceId,
