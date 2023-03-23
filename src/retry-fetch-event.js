@@ -72,5 +72,3 @@ export const fetchEvt = async (url, opts) => {
         throw error;
     }
 };
-
-// PROXY_LIST="srv-captain--chat-api-proxy1" OPENAI_API_KEY="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,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, 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" API_PORT=8082 OPENAI_MODEL="gpt-3.5-turbo" CNT_PER_DAY=20 CLIENT=chatgpt API_HOST="0.0.0.0"
