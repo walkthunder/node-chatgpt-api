@@ -67,7 +67,9 @@ export const fetchEvt = async (url, opts) => {
             scoreProxy(opts.proxy);
             // Get a new proxy
             const proxy = getAProxy();
-            return fetchEvt(url, { ...opts, proxy: proxy?.url, retryCnt });
+            if (proxy) {
+                return fetchEvt(url, { ...opts, proxy: proxy?.url, retryCnt });
+            }
         }
         throw error;
     }
