@@ -197,7 +197,7 @@ server.post('/api/chat', async (request, reply) => {
             if (!id || !openId || (left <= 0)) {
                 throw new Error('Invalid Hash Data');
             }
-            if (Math.abs(new Date().valueOf() - Number(date)) > 20000) {
+            if (Math.abs(new Date().valueOf() - Number(date)) > 40000) {
                 throw new Error('Outdated Request');
             }
             // Continue biz
@@ -346,7 +346,7 @@ server.get('/api/socket-chat', { websocket: true }, (connection /* SocketStream 
                 if (!id || !openId || (left <= 0)) {
                     throw new Error('Invalid Hash Data');
                 }
-                if (Math.abs(new Date().valueOf() - Number(date)) > 20000) {
+                if (Math.abs(new Date().valueOf() - Number(date)) > 40000) {
                     throw new Error('Outdated Request');
                 }
                 // Continue biz
