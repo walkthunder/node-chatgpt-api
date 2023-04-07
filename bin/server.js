@@ -4,6 +4,7 @@
 import fastify from 'fastify';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
+import fastifyWebsocket from '@fastify/websocket';
 import { FastifySSEPlugin } from '@waylaidwanderer/fastify-sse-v2';
 import fs from 'fs';
 import { pathToFileURL } from 'url';
@@ -70,6 +71,7 @@ const perMessageClientOptionsWhitelist = settings.apiOptions?.perMessageClientOp
 const server = fastify();
 
 await server.register(FastifySSEPlugin);
+server.register(fastifyWebsocket);
 
 await server.register(fastifyStatic, {
     root: fs.realpathSync('.'),
@@ -219,6 +221,7 @@ server.post('/api/chat', async (request, reply) => {
     if (body.stream === true) {
         onProgress = (token) => {
             if (settings.apiOptions?.debug) {
+                console.debug('onprogress: ');
                 console.debug(token);
             }
             if (token !== '[DONE]') {
@@ -314,6 +317,149 @@ server.post('/api/chat', async (request, reply) => {
         return;
     }
     reply.code(code).send({ error: message });
+});
+
+server.get('/api/socket-chat', { websocket: true }, (connection /* SocketStream */) => {
+    connection.socket.on('message', async (msg) => {
+        let body;
+        try {
+            body = JSON.parse(msg.toString()) || {};
+            console.log('socket on message: ', body);
+        } catch (error) {
+            console.error('socket message parse exception caught: ', error);
+            connection.socket.close();
+        }
+
+        if (!settings.skipAuth) {
+            try {
+                const { hash } = body || {};
+                if (!hash) {
+                    throw new Error('Not Authorized');
+                }
+                console.log('hash and salt: ', hash);
+                const bytes = CryptoJS.AES.decrypt(hash, settings.chatSalt);
+                console.log('request decrypt: ', bytes);
+                const {
+                    id, openId, left, date,
+                } = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+                console.log('request hash data: ', id, openId, left, date);
+                if (!id || !openId || (left <= 0)) {
+                    throw new Error('Invalid Hash Data');
+                }
+                if (Math.abs(new Date().valueOf() - Number(date)) > 20000) {
+                    throw new Error('Outdated Request');
+                }
+                // Continue biz
+            } catch (error) {
+                console.error('auth failed: ', error);
+                connection.socket.send(JSON.stringify({
+                    id: '',
+                    event: 'error',
+                    data: {
+                        error: error?.message || 'Auth Failed',
+                    },
+                }));
+                connection.socket.close();
+                return;
+            }
+        }
+        if (body.chatStart !== 'START') {
+            return;
+        }
+
+        const abortController = new AbortController();
+
+        const onProgress = (token) => {
+            console.debug('onprogress: ');
+            console.debug(token);
+            if (token !== '[DONE]') {
+                connection.socket.send(JSON.stringify({ id: '', data: JSON.stringify(token) }));
+            }
+        };
+
+        let result;
+        let error;
+        try {
+            if (!body.message) {
+                const invalidError = new Error();
+                invalidError.data = {
+                    code: 400,
+                    message: 'The message parameter is required.',
+                };
+                // noinspection ExceptionCaughtLocallyJS
+                throw invalidError;
+            }
+
+            let clientToUseForMessage = clientToUse;
+            const clientOptions = filterClientOptions(body.clientOptions, clientToUseForMessage);
+            if (clientOptions && clientOptions.clientToUse) {
+                clientToUseForMessage = clientOptions.clientToUse;
+                delete clientOptions.clientToUse;
+            }
+
+            const messageClient = getClient(clientToUseForMessage);
+            let targetClient = messageClient;
+            if (Array.isArray(messageClient)) {
+                targetClient = messageClient[Math.floor(Math.random() * messageClient.length)];
+            }
+            result = await targetClient.sendMessage(body.message, {
+                jailbreakConversationId: body.jailbreakConversationId ? body.jailbreakConversationId.toString() : undefined,
+                conversationId: body.conversationId ? body.conversationId.toString() : undefined,
+                parentMessageId: body.parentMessageId ? body.parentMessageId.toString() : undefined,
+                conversationSignature: body.conversationSignature,
+                clientId: body.clientId,
+                invocationId: body.invocationId,
+                clientOptions,
+                onProgress,
+                abortController,
+            });
+        } catch (e) {
+            error = e;
+        }
+
+        if (result !== undefined) {
+            if (settings.apiOptions?.debug) {
+                console.debug(result);
+            }
+            // reply.sse({ event: 'result', id: '', data: JSON.stringify(result) });
+            // reply.sse({ id: '', data: '[DONE]' });
+            connection.socket.send(JSON.stringify({ event: 'result', id: '', data: JSON.stringify(result) }));
+            connection.socket.send(JSON.stringify({ id: '', data: '[DONE]' }));
+            await nextTick();
+            // 更新服务状态
+            healthCheck.up();
+            // reply.raw.end();
+            connection.socket.close();
+            return;
+        }
+
+        const code = error?.data?.code || 503;
+        if (code === 503) {
+            console.error(error);
+        } else if (settings.apiOptions?.debug) {
+            console.debug(error);
+        }
+        const message = error?.data?.message || `There was an error communicating with ${clientToUse === 'bing' ? 'Bing' : 'ChatGPT'}.`;
+        // trace('gpt_error', {
+        //     conversationId: body.conversationId,
+        //     message,
+        //     reason: JSON.stringify(error),
+        // });
+        // 更新服务状态
+        healthCheck.down();
+        connection.socket.send(JSON.stringify({
+            id: '',
+            event: 'error',
+            data: JSON.stringify({
+                code,
+                error: message,
+            }),
+        }));
+
+        await nextTick();
+        // reply.raw.end();
+        connection.socket.close();
+    });
 });
 
 const port = settings.apiOptions?.port || settings.port || 3000;
