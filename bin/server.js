@@ -321,6 +321,12 @@ server.post('/api/chat', async (request, reply) => {
 
 server.get('/api/socket-chat', { websocket: true }, (connection /* SocketStream */) => {
     let timer = null;
+    const abortController = new AbortController();
+    connection.socket.on('close', async () => {
+        if (abortController.signal.aborted === false) {
+            abortController.abort();
+        }
+    });
     connection.socket.on('message', async (msg) => {
         // 持续活动，复用之前连接
         if (timer) {
@@ -372,11 +378,10 @@ server.get('/api/socket-chat', { websocket: true }, (connection /* SocketStream 
             return;
         }
 
-        const abortController = new AbortController();
 
         const onProgress = (token) => {
-            console.debug('onprogress: ');
-            console.debug(token);
+            // console.debug('onprogress: ');
+            // console.debug(token);
             if (token !== '[DONE]') {
                 connection.socket.send(JSON.stringify({ id: '', data: JSON.stringify(token) }));
             }
