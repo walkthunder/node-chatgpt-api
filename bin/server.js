@@ -320,7 +320,12 @@ server.post('/api/chat', async (request, reply) => {
 });
 
 server.get('/api/socket-chat', { websocket: true }, (connection /* SocketStream */) => {
+    let timer = null;
     connection.socket.on('message', async (msg) => {
+        // 持续活动，复用之前连接
+        if (timer) {
+            clearTimeout(timer);
+        }
         let body;
         try {
             body = JSON.parse(msg.toString()) || {};
@@ -429,7 +434,10 @@ server.get('/api/socket-chat', { websocket: true }, (connection /* SocketStream 
             // 更新服务状态
             healthCheck.up();
             // reply.raw.end();
-            connection.socket.close();
+            // 五分钟后如果没有活动关闭连接
+            timer = setTimeout(() => {
+                connection.socket.close();
+            }, 5 * 60000);
             return;
         }
 
