@@ -18,10 +18,10 @@ import ChatGPTBrowserClient from '../src/ChatGPTBrowserClient.js';
 import BingAIClient from '../src/BingAIClient.js';
 import { trace } from '../src/trace.js';
 import { initProxy, listProxy } from '../src/ProxyManager.js';
-import healthCheck from '../src/health-check.js';
+// import healthCheck from '../src/health-check.js';
 // import { ProxyAgent } from 'undici';
 
-healthCheck.init();
+// healthCheck.init();
 
 const execp = promisify(exec);
 
@@ -171,16 +171,17 @@ server.post('/api/usage', async (request, reply) => {
     }
 });
 
-server.post('/api/ping', async (request, reply) => {
-    console.log('ping request');
-    const info = healthCheck.get();
-    reply.send({
-        pong: info,
-    });
-});
+// server.post('/api/ping', async (request, reply) => {
+//     console.log('ping request');
+//     const info = healthCheck.get();
+//     reply.send({
+//         pong: info,
+//     });
+// });
 
 server.post('/api/chat', async (request, reply) => {
     console.log('api chat message - ', JSON.stringify(request.body));
+    settings.skipAuth = true;
     if (!settings.skipAuth) {
         try {
             const { hash } = request.body || {};
@@ -281,7 +282,7 @@ server.post('/api/chat', async (request, reply) => {
             reply.sse({ id: '', data: '[DONE]' });
             await nextTick();
             // 更新服务状态
-            healthCheck.up();
+            // healthCheck.up();
             reply.raw.end();
             return;
         }
@@ -302,7 +303,7 @@ server.post('/api/chat', async (request, reply) => {
         reason: JSON.stringify(error),
     });
     // 更新服务状态
-    healthCheck.down();
+    // healthCheck.down();
     if (body.stream === true) {
         reply.sse({
             id: '',
@@ -437,7 +438,7 @@ server.get('/api/socket-chat', { websocket: true }, (connection /* SocketStream 
             connection.socket.send(JSON.stringify({ id: '', data: '[DONE]' }));
             await nextTick();
             // 更新服务状态
-            healthCheck.up();
+            // healthCheck.up();
             // reply.raw.end();
             // 五分钟后如果没有活动关闭连接
             timer = setTimeout(() => {
@@ -459,7 +460,7 @@ server.get('/api/socket-chat', { websocket: true }, (connection /* SocketStream 
         //     reason: JSON.stringify(error),
         // });
         // 更新服务状态
-        healthCheck.down();
+        // healthCheck.down();
         connection.socket.send(JSON.stringify({
             id: '',
             event: 'error',
@@ -476,6 +477,7 @@ server.get('/api/socket-chat', { websocket: true }, (connection /* SocketStream 
 });
 
 const port = settings.apiOptions?.port || settings.port || 3000;
+console.log(' port: ', settings.apiOptions?.port, settings.port, process.env.API_PORT);
 
 server.listen({
     port,
@@ -487,7 +489,7 @@ server.listen({
         process.exit(1);
     } else {
         // 注册服务
-        healthCheck.register();
+        // healthCheck.register();
     }
 });
 

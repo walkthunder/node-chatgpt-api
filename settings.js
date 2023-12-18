@@ -6,13 +6,13 @@ export default {
     // If set, `ChatGPTClient` will use `keyv-file` to store conversations to this JSON file instead of in memory.
     // However, `cacheOptions.store` will override this if set
     storageFilePath: process.env.STORAGE_FILE_PATH || './cache.json',
-    chatSalt: process.env.CHAT_SALT || '',
+    chatSalt: process.env.CHAT_SALT || 'chat-salt',
     chatGptClient: {
         // Your OpenAI API key (for `ChatGPTClient`)
-        openaiApiKey: process.env.OPENAI_API_KEY || '',
+        openaiApiKey: process.env.OPENAI_API_KEY || 'sk-B3oCf0pQMoEQarLNnFdhO3yMiAmJNTcL92JTdb380wIc2j2p',
         // (Optional) Support for a reverse proxy for the completions endpoint (private API server).
         // Warning: This will expose your `openaiApiKey` to a third party. Consider the risks before using this.
-        reverseProxyUrl: '',
+        reverseProxyUrl: process.env.UPSTREAM || 'https://api.openai-proxy.org/v1/chat/completions',
         // (Optional) Parameters as described in https://platform.openai.com/docs/api-reference/completions
         modelOptions: {
             // You can override the model name and any other parameters here.
